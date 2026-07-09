@@ -13,7 +13,8 @@ import java.util.*;
 public class SearchResult {
 
     private String body = null;
-    private String uuid = null;
+    private String id = null;
+    private double score = 0.0;
 
     /**
      * set the body
@@ -29,8 +30,17 @@ public class SearchResult {
      *
      * @param uuid the id of the document found
      */
-    protected void setUuid(String uuid) {
-        this.uuid = uuid;
+    protected void setId(String uuid) {
+        this.id = uuid;
+    }
+
+    /**
+     * set the score
+     *
+     * @param score of the result
+     */
+    protected void setScore(double score) {
+        this.score = score;
     }
 
 }

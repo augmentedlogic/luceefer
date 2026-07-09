@@ -66,8 +66,9 @@ public class ApiHandler implements StandardHandler {
      *
      * @param uuid the document id
      */
-    private void deleteOnDemand(String uuid) {
+    private Boolean deleteOnDemand(String uuid) {
 
+        Boolean existed = false;
         IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
         IndexWriter w = null;
 
@@ -80,9 +81,9 @@ public class ApiHandler implements StandardHandler {
 
             int totalHits = (int) results.totalHits.value ;
             if (totalHits > 0) {
+                existed = true;
                 w.deleteDocuments(new Term("uuid", uuid));
             }
-
 
         } catch(Exception e) {
 
@@ -99,6 +100,7 @@ public class ApiHandler implements StandardHandler {
 
         }
 
+        return existed;
     }
 
 
@@ -117,6 +119,7 @@ public class ApiHandler implements StandardHandler {
     public HttpResponse handle(HttpRequest request) {
 
         Response res = new Response();
+        long start_time = System.currentTimeMillis();
 
         try {
             String idirectory = System.getProperty("java.io.tmpdir") + java.io.File.separator + "index.luceefer";
@@ -138,6 +141,7 @@ public class ApiHandler implements StandardHandler {
         case "add":
 
             Payload p = null;
+            Boolean updated = false;
 
             try {
                 Gson gson = new Gson();
@@ -149,12 +153,16 @@ public class ApiHandler implements StandardHandler {
 
             } catch(Exception e) {
                 System.out.println(e);
+                res.setStatus(500);
+
             }
 
             try {
-                deleteOnDemand(uuid);
+                updated = deleteOnDemand(uuid);
             } catch(Exception e) {
                 System.out.println(e);
+                res.setStatus(500);
+
             }
 
             try {
@@ -163,12 +171,17 @@ public class ApiHandler implements StandardHandler {
                 IndexWriter w = new IndexWriter(this.index, config);
                 addDoc(w, uuid, body);
                 w.close();
-
+                if(updated == true) {
+                    res.setStatus(201);
+                } else {
+                    res.setStatus(200);
+                }
             } catch(Exception e) {
                 System.out.println(e);
+                res.setStatus(500);
             }
 
-            res.setStatus(200);
+
             break;
 
         case "reset":
@@ -178,10 +191,13 @@ public class ApiHandler implements StandardHandler {
                 IndexWriter w = new IndexWriter(this.index, config);
                 w.deleteAll();
                 w.close();
+                res.setStatus(200);
+
             } catch(Exception e) {
                 System.out.println(e);
+                res.setStatus(500);
+
             }
-            res.setStatus(200);
 
             break;
 
@@ -207,9 +223,11 @@ public class ApiHandler implements StandardHandler {
 
                 for(int i=0; i<hits.length; ++i) {
                     int docId = hits[i].doc;
+                    double docScore = hits[i].score;
                     Document d = searcher.doc(docId);
                     SearchResult searchResult = new SearchResult();
-                    searchResult.setUuid((String) d.get("uuid"));
+                    searchResult.setId((String) d.get("uuid"));
+                    searchResult.setScore(docScore);
                     //searchResult.setBody((String) d.get("content"));
                     searchResults.add(searchResult);
                 }
@@ -218,10 +236,12 @@ public class ApiHandler implements StandardHandler {
 
                 res.setStatus(200);
                 res.setResults(searchResults);
+                res.setCustomField("took", System.currentTimeMillis() - start_time);
 
             } catch(Exception e) {
                 // TODO: logging
                 System.out.println(e);
+                res.setStatus(500);
             }
 
             break;
@@ -239,6 +259,7 @@ public class ApiHandler implements StandardHandler {
 
             } catch(Exception e) {
                 System.out.println(e);
+                res.setStatus(500);
             }
 
 
