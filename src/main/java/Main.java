@@ -17,6 +17,7 @@ class Main {
 
         // TODO: load option config file
 
+        ConfigLoader.load(args);
 
         System.out.println("Listening on localhost:9666\n");
 

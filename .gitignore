@@ -18,3 +18,4 @@ buildNumber.properties
 doc/
 service.sh
 work/
+config.properties

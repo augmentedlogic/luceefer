@@ -28,6 +28,16 @@ public class Response {
     }
 
     /**
+     * set the time it took to query
+     *
+     * @param took in milliseconds
+     */
+    protected void setTook(long took) {
+        this.response.put("took", took);
+    }
+
+
+    /**
      * set the method
      *
      * @param method set the method that was called in ApiHandler

@@ -18,6 +18,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -109,6 +110,7 @@ public class ApiHandler implements StandardHandler {
         Document doc = new Document();
         doc.add(new StringField("uuid", uuid, Field.Store.YES));
         doc.add(new TextField("content", content, Field.Store.YES));
+        doc.add(new StringField("custom_score", "1.0", Field.Store.YES));
         w.addDocument(doc);
     }
 
@@ -232,6 +234,7 @@ public class ApiHandler implements StandardHandler {
                     Document d = searcher.doc(docId);
                     SearchResult searchResult = new SearchResult();
                     searchResult.setId((String) d.get("uuid"));
+                    //System.out.println((String) d.get("custom_score"));
                     searchResult.setScore(docScore);
                     //searchResult.setBody((String) d.get("content"));
                     searchResults.add(searchResult);
@@ -240,7 +243,8 @@ public class ApiHandler implements StandardHandler {
 
                 res.setStatus(200);
                 res.setResults(searchResults);
-                res.setCustomField("took", System.currentTimeMillis() - start_time);
+                //System.out.println("Took: " + ( System.currentTimeMillis() - start_time ));
+                res.setTook(System.currentTimeMillis() - start_time);
 
             } catch(Exception e) {
                 new LogTool().error(LogTool.getLogPoint(), e);
