@@ -15,6 +15,8 @@ import com.augmentedlogic.flere.service.*;
 class Main {
     public static void main( String[] args ) {
 
+        // TODO: load option config file
+
 
         System.out.println("Listening on localhost:9666\n");
 

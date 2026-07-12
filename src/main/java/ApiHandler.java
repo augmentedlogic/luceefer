@@ -87,13 +87,14 @@ public class ApiHandler implements StandardHandler {
 
         } catch(Exception e) {
 
+
         } finally {
 
             if(w != null) {
                 try {
                     w.close();
                 } catch (Exception ex) {
-
+                    new LogTool().error(LogTool.getLogPoint(), ex);
                 }
             }
 
@@ -105,7 +106,6 @@ public class ApiHandler implements StandardHandler {
 
 
     private void addDoc(IndexWriter w, String uuid, String content) throws Exception {
-        //System.out.println("ADDING: " + uuid + " " + content);
         Document doc = new Document();
         doc.add(new StringField("uuid", uuid, Field.Store.YES));
         doc.add(new TextField("content", content, Field.Store.YES));
@@ -125,15 +125,18 @@ public class ApiHandler implements StandardHandler {
             String idirectory = System.getProperty("java.io.tmpdir") + java.io.File.separator + "index.luceefer";
             this.index = FSDirectory.open(Paths.get(idirectory));
         } catch(Exception e) {
-            System.out.println("handle: " + e);
+            new LogTool().debug("handle: " + e);
         }
 
         String m = request.getString("m", "invalid");
         String payload = request.getPostdata();
+
+        Integer o = request.getInteger("o", 0);
         String q = request.getString("q");
         String uuid = null;
         String body = null;
 
+        new LogTool().debug("METHOD: " + m);
         res.setMethod(m);
 
         switch(m) {
@@ -146,13 +149,13 @@ public class ApiHandler implements StandardHandler {
             try {
                 Gson gson = new Gson();
                 p = gson.fromJson(payload, Payload.class);
-                //System.out.println("FOUND: " + p.getId());
-                //System.out.println("FOUND: " + p.getBody());
+                new LogTool().debug("FOUND: " + p.getId());
+                new LogTool().debug("FOUND: " + p.getBody());
                 uuid = p.getId();
                 body = p.getBody();
 
             } catch(Exception e) {
-                System.out.println(e);
+                new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
 
             }
@@ -160,7 +163,7 @@ public class ApiHandler implements StandardHandler {
             try {
                 updated = deleteOnDemand(uuid);
             } catch(Exception e) {
-                System.out.println(e);
+                new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
 
             }
@@ -177,7 +180,7 @@ public class ApiHandler implements StandardHandler {
                     res.setStatus(200);
                 }
             } catch(Exception e) {
-                System.out.println(e);
+                new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
             }
 
@@ -194,7 +197,7 @@ public class ApiHandler implements StandardHandler {
                 res.setStatus(200);
 
             } catch(Exception e) {
-                System.out.println(e);
+                new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
 
             }
@@ -207,11 +210,13 @@ public class ApiHandler implements StandardHandler {
             try {
 
                 int hitsPerPage = 20;
-                //String[] qs = q.split(" ");
 
-                //System.out.println("searching for " + q);
                 QueryParser qp = new QueryParser("content", this.analyzer);
-                qp.setDefaultOperator(QueryParser.Operator.AND);
+                if(o == 0) {
+                    qp.setDefaultOperator(QueryParser.Operator.AND);
+                } else if(o == 1) {
+                    qp.setDefaultOperator(QueryParser.Operator.OR);
+                }
                 Query query = qp.parse(q);
 
                 IndexReader reader = DirectoryReader.open(this.index);
@@ -232,15 +237,13 @@ public class ApiHandler implements StandardHandler {
                     searchResults.add(searchResult);
                 }
 
-                //System.out.println(searchResults);
 
                 res.setStatus(200);
                 res.setResults(searchResults);
                 res.setCustomField("took", System.currentTimeMillis() - start_time);
 
             } catch(Exception e) {
-                // TODO: logging
-                System.out.println(e);
+                new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
             }
 
@@ -258,7 +261,7 @@ public class ApiHandler implements StandardHandler {
                 // directory size
 
             } catch(Exception e) {
-                System.out.println(e);
+                new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
             }
 
