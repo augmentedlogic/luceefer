@@ -30,6 +30,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.ByteBuffersDirectory;
@@ -135,6 +136,9 @@ public class ApiHandler implements StandardHandler {
 
         Integer o = request.getInteger("o", 0);
         String q = request.getString("q");
+        Integer use_fuzzy = request.getInteger("uf", 0);
+        Integer fuzzy_distance = request.getInteger("fd", 2);
+
         String uuid = null;
         String body = null;
 
@@ -221,9 +225,20 @@ public class ApiHandler implements StandardHandler {
                 }
                 Query query = qp.parse(q);
 
+                Query fuzzyQuery = null;
+                if(use_fuzzy == 1) {
+                    fuzzyQuery = new FuzzyQuery(new Term("content", q), fuzzy_distance);
+                }
+
                 IndexReader reader = DirectoryReader.open(this.index);
                 IndexSearcher searcher = new IndexSearcher(reader);
-                TopDocs docs = searcher.search(query, hitsPerPage);
+                TopDocs docs = null;
+                if(use_fuzzy == 1) {
+                    docs = searcher.search(fuzzyQuery, hitsPerPage);
+                } else {
+                    docs = searcher.search(query, hitsPerPage);
+                }
+
                 ScoreDoc[] hits = docs.scoreDocs;
 
                 ArrayList<SearchResult> searchResults = new ArrayList<SearchResult>();
@@ -246,6 +261,29 @@ public class ApiHandler implements StandardHandler {
                 //System.out.println("Took: " + ( System.currentTimeMillis() - start_time ));
                 res.setTook(System.currentTimeMillis() - start_time);
 
+            } catch(Exception e) {
+                new LogTool().error(LogTool.getLogPoint(), e);
+                res.setStatus(500);
+            }
+
+            break;
+
+        case "del":
+            try {
+                Gson gson = new Gson();
+                p = gson.fromJson(payload, Payload.class);
+                uuid = request.getString("uuid", null);
+                if(uuid != null) {
+                    updated = deleteOnDemand(uuid);
+                    new LogTool().debug("DELETED: " + uuid);
+                    if(updated == true) {
+                        res.setStatus(200);
+                    } else {
+                        res.setStatus(404);
+                    }
+                } else {
+                    res.setStatus(400);
+                }
             } catch(Exception e) {
                 new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
