@@ -14,28 +14,16 @@ import java.io.File.*;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.document.NumericDocValuesField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.document.*;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.FuzzyQuery;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.util.Version;
 
 import com.google.gson.Gson;
@@ -60,7 +48,8 @@ public class ApiHandler implements StandardHandler {
      */
     //protected StandardAnalyzer analyzer = new StandardAnalyzer();
     //protected SimpleAnalyzer analyzer = new SimpleAnalyzer();
-    protected Ngram35Analyzer analyzer = new Ngram35Analyzer();
+    //protected Ngram35Analyzer analyzer = new Ngram35Analyzer();
+    protected Analyzer analyzer;
 
     /**
      * delete document from index so it can be set again
@@ -113,11 +102,18 @@ public class ApiHandler implements StandardHandler {
         w.addDocument(doc);
     }
 
+
     /**
      * handler for /api
      *
      **/
     public HttpResponse handle(HttpRequest request) {
+
+        if(System.getProperty("luceefer.analyzer").equals("ngram")) {
+           this.analyzer = new Ngram35Analyzer();
+        } else {
+           this.analyzer = new SimpleAnalyzer();
+        }
 
         Response res = new Response();
         long start_time = System.currentTimeMillis();
@@ -129,7 +125,6 @@ public class ApiHandler implements StandardHandler {
         } catch(Exception e) {
             new LogTool().debug("handle: " + e);
         }
-
 
         String m = request.getString("m", "invalid");
         String payload = request.getPostdata();

@@ -43,39 +43,6 @@ public class LogTool {
     }
 
     /**
-     * set the access log file path
-     *
-     * @param path the path to the access log file
-     *
-     **/
-    public static void setAccessLog(String path) {
-        Properties props = System.getProperties();
-        props.setProperty("luceefer.access_log", path);
-    }
-
-    /**
-     * set the debug log file path
-     *
-     * @param path the path to the debug log file
-     *
-     **/
-    public static void setDebugLog(String path) {
-        Properties props = System.getProperties();
-        props.setProperty("luceefer.debuglog", path);
-    }
-
-    /**
-     * set the error log file path
-     *
-     * @param path the path to the error log file
-     *
-     **/
-    public static void setErrorLog(String path) {
-        Properties props = System.getProperties();
-        props.setProperty("luceefer.errorlog", path);
-    }
-
-    /**
      * get the point at which the log entry was written
      * currently not used
      *
@@ -134,28 +101,18 @@ public class LogTool {
      **/
     protected void write(String msg) {
         Properties systemProperties = System.getProperties();
-        String access_log = systemProperties.getProperty("luceefer.access_log");
+        String access_log = systemProperties.getProperty("luceefer.logfile");
         if(access_log != null) {
             this.writeTo(access_log, msg);
         }
     }
 
 
-    /**
-     * wrapper for writing to the debug log
-     *
-     * @param msg the message added to the log file
-     **/
-    public void debug(String msg) {
+    protected void debug(String msg) {
         Properties systemProperties = System.getProperties();
-        String debug_set = systemProperties.getProperty("luceefer.debug");
-        if(debug_set != null) {
-            String debug_log = systemProperties.getProperty("luceefer.debuglog");
-            if(debug_log != null) {
-                this.writeTo(debug_log, msg);
-            } else {
-                System.out.println(msg);
-            }
+        String access_log = systemProperties.getProperty("luceefer.logfile");
+        if(access_log != null) {
+            this.writeTo(access_log, msg);
         }
     }
 
