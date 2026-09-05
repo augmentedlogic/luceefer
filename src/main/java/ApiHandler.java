@@ -49,8 +49,6 @@ import com.augmentedlogic.flere.service.*;
 public class ApiHandler implements StandardHandler {
 
     //protected Directory index = new ByteBuffersDirectory();
-    //protected StandardAnalyzer analyzer = new StandardAnalyzer();
-    //protected Ngram35Analyzer analyzer = new Ngram35Analyzer();
 
     /**
      * the index directory object
@@ -60,8 +58,9 @@ public class ApiHandler implements StandardHandler {
     /**
      * the analyzer to be used
      */
-    protected SimpleAnalyzer analyzer = new SimpleAnalyzer();
-
+    //protected StandardAnalyzer analyzer = new StandardAnalyzer();
+    //protected SimpleAnalyzer analyzer = new SimpleAnalyzer();
+    protected Ngram35Analyzer analyzer = new Ngram35Analyzer();
 
     /**
      * delete document from index so it can be set again
@@ -100,7 +99,6 @@ public class ApiHandler implements StandardHandler {
                 }
             }
 
-
         }
 
         return existed;
@@ -125,20 +123,20 @@ public class ApiHandler implements StandardHandler {
         long start_time = System.currentTimeMillis();
 
         try {
+            // take from settings
             String idirectory = System.getProperty("java.io.tmpdir") + java.io.File.separator + "index.luceefer";
             this.index = FSDirectory.open(Paths.get(idirectory));
         } catch(Exception e) {
             new LogTool().debug("handle: " + e);
         }
 
+
         String m = request.getString("m", "invalid");
         String payload = request.getPostdata();
-
         Integer o = request.getInteger("o", 0);
         String q = request.getString("q");
         Integer use_fuzzy = request.getInteger("uf", 0);
         Integer fuzzy_distance = request.getInteger("fd", 2);
-
         String uuid = null;
         String body = null;
 
@@ -190,11 +188,12 @@ public class ApiHandler implements StandardHandler {
                 res.setStatus(500);
             }
 
-
             break;
 
         case "reset":
-
+            /**
+             * delete all documents
+             **/
             try {
                 IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
                 IndexWriter w = new IndexWriter(this.index, config);
@@ -205,18 +204,15 @@ public class ApiHandler implements StandardHandler {
             } catch(Exception e) {
                 new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
-
             }
 
             break;
-
 
         case "query":
 
             try {
 
                 int hitsPerPage = 20;
-
                 QueryParser qp = new QueryParser("content", this.analyzer);
                 if(o == 0) {
                     qp.setDefaultOperator(QueryParser.Operator.AND);
@@ -255,7 +251,6 @@ public class ApiHandler implements StandardHandler {
                     searchResults.add(searchResult);
                 }
 
-
                 res.setStatus(200);
                 res.setResults(searchResults);
                 //System.out.println("Took: " + ( System.currentTimeMillis() - start_time ));
@@ -265,10 +260,12 @@ public class ApiHandler implements StandardHandler {
                 new LogTool().error(LogTool.getLogPoint(), e);
                 res.setStatus(500);
             }
-
             break;
 
         case "del":
+            /**
+             * delete a document
+             **/
             try {
                 Gson gson = new Gson();
                 p = gson.fromJson(payload, Payload.class);
@@ -311,7 +308,7 @@ public class ApiHandler implements StandardHandler {
             break;
 
         default:
-
+            // TODO: invalid request
 
             break;
         }
